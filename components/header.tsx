@@ -4,56 +4,29 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
-import { getSupabase } from "@/lib/supabaseClient"
-import type { User } from "@supabase/supabase-js"
+import { useAuth, logoutUser } from "@/lib/auth-client"
 
 export function Header() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, loading } = useAuth()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
 
   // Only run on client side
   useEffect(() => {
     setMounted(true)
-
-    // Get initial session
-    const getInitialUser = async () => {
-      try {
-        const supabase = getSupabase()
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        console.log("Header - Current session:", session)
-        setUser(session?.user ?? null)
-      } catch (error) {
-        console.error("Error getting session in header:", error)
-      }
-    }
-
-    getInitialUser()
-
-    // Listen for auth changes
-    const supabase = getSupabase()
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, session?.user?.email)
-      setUser(session?.user ?? null)
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
   }, [])
 
   // Handle logout
   const handleLogout = async () => {
     try {
-      const supabase = getSupabase()
-      await supabase.auth.signOut()
-      console.log("User signed out")
-      // Force a hard navigation to home
-      window.location.href = "/"
+      const result = await logoutUser()
+      if (result.success) {
+        console.log("User signed out")
+        // Force a hard navigation to home
+        window.location.href = "/"
+      } else {
+        console.error("Error signing out:", result.error)
+      }
     } catch (error) {
       console.error("Error signing out:", error)
     }
