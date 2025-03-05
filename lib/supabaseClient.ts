@@ -7,7 +7,7 @@ let supabaseInstance: SupabaseClient | null = null
 // Function to get the Supabase client (singleton pattern)
 export function getSupabase(): SupabaseClient {
   // For client-side only
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     if (supabaseInstance) {
       return supabaseInstance
     }
@@ -21,13 +21,13 @@ export function getSupabase(): SupabaseClient {
     }
 
     console.log("Creating new Supabase client instance")
-    
+
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storageKey: 'jobswipe-auth-token',
+        storageKey: "jobswipe-auth-token",
       },
     })
 
@@ -42,33 +42,36 @@ export function getSupabase(): SupabaseClient {
       console.error("Missing Supabase environment variables")
       throw new Error("Missing Supabase environment variables")
     }
-    
+
     return createClient(supabaseUrl, supabaseAnonKey)
   }
 }
 
-// Create a simple fallback authentication system using localStorage
-export const AuthFallback = {
+// Alias for backward compatibility
+export const getSupabaseClient = getSupabase
+
+// Simple local storage fallback
+export const AuthStore = {
   // Store user info in localStorage as a fallback
-  storeUserInfo: (user: any) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('jobswipe-user-fallback', JSON.stringify(user))
+  setUser: (user: any) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("jobswipe-user-fallback", JSON.stringify(user))
     }
   },
-  
+
   // Get user info from localStorage
-  getUserInfo: () => {
-    if (typeof window !== 'undefined') {
-      const userStr = localStorage.getItem('jobswipe-user-fallback')
+  getUser: () => {
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("jobswipe-user-fallback")
       return userStr ? JSON.parse(userStr) : null
     }
     return null
   },
-  
+
   // Clear user info from localStorage
-  clearUserInfo: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('jobswipe-user-fallback')
+  clearUser: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("jobswipe-user-fallback")
     }
-  }
+  },
 }

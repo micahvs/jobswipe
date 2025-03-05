@@ -11,8 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { getSupabase } from "@/lib/supabaseClient"
-import { loginUser } from "@/lib/auth"
+import { loginUser, getSupabaseClient } from "@/lib/auth-client"
 
 export default function EmployerLoginPage() {
   const [email, setEmail] = useState("")
@@ -45,15 +44,12 @@ export default function EmployerLoginPage() {
       }
 
       console.log(`Attempting employer login with: ${email}`)
-
+      
       const result = await loginUser(email, password, true)
-
+      
       if (!result.success) {
         // Check if the error is about email confirmation
-        if (
-          result.error?.includes("Email not confirmed") ||
-          result.error?.toLowerCase().includes("email confirmation")
-        ) {
+        if (result.error?.includes("Email not confirmed") || result.error?.toLowerCase().includes("email confirmation")) {
           setNeedsEmailVerification(true)
           throw new Error("Your email has not been verified. Please check your inbox or click 'Resend Email' below.")
         }
@@ -61,7 +57,7 @@ export default function EmployerLoginPage() {
       }
 
       console.log("Employer login successful")
-
+      
       toast({
         title: "Login successful",
         description: "You are now logged in. Please use the navigation links below.",
@@ -94,7 +90,11 @@ export default function EmployerLoginPage() {
     setIsResendingEmail(true)
 
     try {
-      const supabase = getSupabase()
+      const supabase = getSupabaseClient()
+      if (!supabase) {
+        throw new Error("Supabase client not available")
+      }
+      
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
@@ -225,4 +225,3 @@ export default function EmployerLoginPage() {
     </div>
   )
 }
-

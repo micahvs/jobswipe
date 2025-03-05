@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { getSupabase, AuthFallback } from "@/lib/supabaseClient"
+import { loginUser, getSupabaseClient } from "@/lib/auth-client"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -22,6 +22,7 @@ export default function LoginPage() {
 
   const handleNavigation = (path: string) => {
     console.log(`Navigating to: ${path}`)
+    // Force a hard navigation
     window.location.href = path
   }
 
@@ -42,32 +43,21 @@ export default function LoginPage() {
 
       console.log(`Attempting login with: ${email}`)
 
-      const supabase = getSupabase()
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const result = await loginUser(email, password)
 
-      if (error) {
+      if (!result.success) {
         // Check if the error is about email confirmation
         if (
-          error.message.includes("Email not confirmed") ||
-          error.message.toLowerCase().includes("email confirmation")
+          result.error?.includes("Email not confirmed") ||
+          result.error?.toLowerCase().includes("email confirmation")
         ) {
           setNeedsEmailVerification(true)
           throw new Error("Your email has not been verified. Please check your inbox or click 'Resend Email' below.")
         }
-        throw error
+        throw new Error(result.error || "Login failed")
       }
 
-      console.log("Login successful, user data:", data.user)
-
-      // Store user info in localStorage as a fallback
-      AuthFallback.storeUserInfo({
-        id: data.user.id,
-        email: data.user.email,
-        isEmployer: data.user.user_metadata?.isEmployer || false,
-      })
+      console.log("Login successful")
 
       toast({
         title: "Login successful",
@@ -101,7 +91,7 @@ export default function LoginPage() {
     setIsResendingEmail(true)
 
     try {
-      const supabase = getSupabase()
+      const supabase = getSupabaseClient()
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
