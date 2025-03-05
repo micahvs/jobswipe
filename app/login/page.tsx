@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { loginUser, getSupabaseClient } from "@/lib/auth-client"
+import { loginUser, getSupabase } from "@/lib/auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -42,15 +42,12 @@ export default function LoginPage() {
       }
 
       console.log(`Attempting login with: ${email}`)
-
+      
       const result = await loginUser(email, password)
-
+      
       if (!result.success) {
         // Check if the error is about email confirmation
-        if (
-          result.error?.includes("Email not confirmed") ||
-          result.error?.toLowerCase().includes("email confirmation")
-        ) {
+        if (result.error?.includes("Email not confirmed") || result.error?.toLowerCase().includes("email confirmation")) {
           setNeedsEmailVerification(true)
           throw new Error("Your email has not been verified. Please check your inbox or click 'Resend Email' below.")
         }
@@ -58,7 +55,7 @@ export default function LoginPage() {
       }
 
       console.log("Login successful")
-
+      
       toast({
         title: "Login successful",
         description: "You are now logged in. Please use the navigation links below.",
@@ -91,7 +88,11 @@ export default function LoginPage() {
     setIsResendingEmail(true)
 
     try {
-      const supabase = getSupabaseClient()
+      const supabase = getSupabase()
+      if (!supabase) {
+        throw new Error("Supabase client not available")
+      }
+      
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
@@ -222,4 +223,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

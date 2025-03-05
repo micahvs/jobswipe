@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
-import { useAuth, logoutUser } from "@/lib/auth-client"
+import { useAuth, logoutUser } from "@/lib/auth"
 
 export function Header() {
   const { user, loading } = useAuth()
@@ -28,7 +28,7 @@ export function Header() {
         console.error("Error signing out:", result.error)
       }
     } catch (error) {
-      console.error("Error signing out:", error)
+      console.error("Error during logout:", error)
     }
   }
 

@@ -1,124 +1,136 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import { getSupabaseClient } from "./supabaseClient"
-import type { User, Session } from "@supabase/supabase-js"
+import { createClient } from "@supabase/supabase-js"
+import { useState, useEffect } from "react"
+import type { User } from "@supabase/supabase-js"
 
+// Create a singleton Supabase client
+let supabaseClient: any = null
+
+// Simple function to get the Supabase client
+export function getSupabase() {
+  if (typeof window === "undefined") {
+    return null // Return null during SSR
+  }
+
+  if (!supabaseClient) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase environment variables")
+      return null
+    }
+
+    supabaseClient = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: true,
+        storageKey: 'jobswipe-auth',
+      }
+    })
+  }
+
+  return supabaseClient
+}
+
+// Simple local storage fallback
+export const AuthStore = {
+  setUser: (user: any) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("jobswipe-user", JSON.stringify(user))
+    }
+  },
+
+  getUser: () => {
+    if (typeof window !== "undefined") {
+      const user = localStorage.getItem("jobswipe-user")
+      return user ? JSON.parse(user) : null
+    }
+    return null
+  },
+
+  clearUser: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("jobswipe-user")
+    }
+  }
+}
+
+// Hook for authentication
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
-  const pathname = usePathname()
 
   useEffect(() => {
-    // Check if we're on the client side
-    if (typeof window !== "undefined") {
-      const supabase = getSupabaseClient()
-
-      // Initial session check
-      const getInitialSession = async () => {
-        try {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession()
-          setSession(session)
-          setUser(session?.user ?? null)
-        } catch (error) {
-          console.error("Error getting session:", error)
-        } finally {
+    // Function to get the current user
+    const getCurrentUser = async () => {
+      try {
+        const supabase = getSupabase()
+        if (!supabase) {
+          // Try fallback if Supabase client isn't available
+          const fallbackUser = AuthStore.getUser()
+          setUser(fallbackUser)
           setLoading(false)
+          return
         }
-      }
 
-      getInitialSession()
+        // Get user from Supabase
+        const { data, error } = await supabase.auth.getUser()
 
-      // Set up auth state listener
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
+        if (error || !data.user) {
+          // Try fallback if Supabase auth fails
+          const fallbackUser = AuthStore.getUser()
+          setUser(fallbackUser)
+        } else {
+          // Store user in local storage as fallback
+          AuthStore.setUser(data.user)
+          setUser(data.user)
+        }
+      } catch (error) {
+        console.error("Auth error:", error)
+        // Try fallback on error
+        const fallbackUser = AuthStore.getUser()
+        setUser(fallbackUser)
+      } finally {
         setLoading(false)
+      }
+    }
 
-        // Handle redirects based on auth state
-        if (!session) {
-          // Skip auth check on auth pages
-          const isAuthPage =
-            pathname === "/login" ||
-            pathname === "/signup" ||
-            pathname === "/employer/login" ||
-            pathname === "/employer/signup" ||
-            pathname === "/"
+    getCurrentUser()
 
-          if (!isAuthPage) {
-            router.push("/login")
-          }
+    // Set up auth state listener
+    const supabase = getSupabase()
+    if (supabase) {
+      const { data } = supabase.auth.onAuthStateChange((event: any, session: any) => {
+        if (session?.user) {
+          AuthStore.setUser(session.user)
+          setUser(session.user)
+        } else if (event === 'SIGNED_OUT') {
+          AuthStore.clearUser()
+          setUser(null)
         }
       })
 
       return () => {
-        subscription.unsubscribe()
+        data?.subscription.unsubscribe()
       }
     }
-  }, [pathname, router])
+  }, [])
 
-  const login = async (email: string, password: string) => {
-    const supabase = getSupabaseClient()
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) throw error
-
-      return { data, error: null }
-    } catch (error: any) {
-      return { data: null, error }
-    }
-  }
-
-  const signup = async (email: string, password: string, metadata?: any) => {
-    const supabase = getSupabaseClient()
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata,
-        },
-      })
-
-      if (error) throw error
-
-      return { data, error: null }
-    } catch (error: any) {
-      return { data: null, error }
-    }
-  }
-
-  const logout = async () => {
-    const supabase = getSupabaseClient()
-    await supabase.auth.signOut()
-    router.push("/")
-  }
-
-  return { user, session, loading, login, signup, logout }
+  return { user, loading }
 }
 
 // Login function that works reliably
 export async function loginUser(email: string, password: string, isEmployer = false) {
   try {
-    const supabase = getSupabaseClient()
+    const supabase = getSupabase()
     if (!supabase) {
       throw new Error("Supabase client not available")
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password
     })
 
     if (error) throw error
@@ -129,6 +141,9 @@ export async function loginUser(email: string, password: string, isEmployer = fa
       throw new Error("This login is for employers only")
     }
 
+    // Store user in local storage as fallback
+    AuthStore.setUser(data.user)
+
     return { success: true, user: data.user }
   } catch (error: any) {
     console.error("Login error:", error)
@@ -136,3 +151,20 @@ export async function loginUser(email: string, password: string, isEmployer = fa
   }
 }
 
+// Logout function
+export async function logoutUser() {
+  try {
+    const supabase = getSupabase()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
+
+    // Clear local storage regardless of Supabase success
+    AuthStore.clearUser()
+
+    return { success: true }
+  } catch (error: any) {
+    console.error("Logout error:", error)
+    return { success: false, error: error.message }
+  }
+}

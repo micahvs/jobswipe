@@ -1,24 +1,31 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { DashboardCard } from "@/components/dashboard-card"
 import { Button } from "@/components/ui/button"
-import { UserIcon, BriefcaseIcon, BarChartIcon } from "lucide-react"
+import { UserIcon, BriefcaseIcon, BarChartIcon } from 'lucide-react'
 import Link from "next/link"
-import { useAuth } from "@/lib/auth-client"
+import { useAuth } from "@/lib/auth"
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
 
+  // Only run on client side
   useEffect(() => {
+    setMounted(true)
+    
     // Check if user is an employer
     if (user && user.user_metadata?.isEmployer) {
       setError("This dashboard is for job seekers. Please use the employer dashboard.")
     }
   }, [user])
+
+  // Don't render anything on server to prevent hydration mismatch
+  if (!mounted) {
+    return <div className="p-8 text-center">Loading dashboard...</div>
+  }
 
   if (loading) {
     return <div className="p-8 text-center">Loading...</div>
@@ -93,4 +100,3 @@ export default function Dashboard() {
     </div>
   )
 }
-

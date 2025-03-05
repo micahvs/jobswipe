@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { loginUser, getSupabaseClient } from "@/lib/auth-client"
+import { loginUser, getSupabase } from "@/lib/auth"
 
 export default function EmployerLoginPage() {
   const [email, setEmail] = useState("")
@@ -90,7 +90,7 @@ export default function EmployerLoginPage() {
     setIsResendingEmail(true)
 
     try {
-      const supabase = getSupabaseClient()
+      const supabase = getSupabase()
       if (!supabase) {
         throw new Error("Supabase client not available")
       }
