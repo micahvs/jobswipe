@@ -3,8 +3,18 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
-  // Skip auth for auth callback routes
-  if (req.nextUrl.pathname.startsWith("/auth/callback")) {
+  // Skip auth checks for static assets and API routes
+  if (
+    req.nextUrl.pathname.startsWith("/_next") ||
+    req.nextUrl.pathname.startsWith("/api/") ||
+    req.nextUrl.pathname.includes(".") ||
+    req.nextUrl.pathname.startsWith("/favicon")
+  ) {
+    return NextResponse.next()
+  }
+
+  // Skip auth for auth-related routes
+  if (req.nextUrl.pathname.startsWith("/auth/")) {
     return NextResponse.next()
   }
 
@@ -15,35 +25,30 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res })
 
   try {
-    // Refresh session if expired
-    const { data: { session }, error } = await supabase.auth.getSession()
+    // Get session
+    const { data } = await supabase.auth.getSession()
+    const session = data.session
     
     // Public routes that don't require auth
     const isPublicRoute =
       req.nextUrl.pathname.startsWith("/login") ||
       req.nextUrl.pathname.startsWith("/signup") ||
-      req.nextUrl.pathname.startsWith("/auth/") ||
       req.nextUrl.pathname === "/"
     
-    // Employee specific routes
+    // Employer specific routes
     const isEmployerRoute = req.nextUrl.pathname.startsWith("/employer/")
     
-    // Handle routes that need authentication
+    // Handle unauthenticated users
     if (!session && !isPublicRoute) {
-      // User is not authenticated and trying to access protected route
+      // Redirect to login
       return NextResponse.redirect(new URL("/login", req.url))
     }
     
-    // User is authenticated
+    // Handle authenticated users
     if (session) {
-      // Store user info in request headers for client components
-      res.headers.set("x-user-id", session.user.id)
-      res.headers.set("x-user-email", session.user.email || "")
-      res.headers.set("x-user-role", session.user.user_metadata?.isEmployer ? "employer" : "jobseeker")
-      
-      // Redirect employers trying to access job seeker routes
       const isEmployer = session.user.user_metadata?.isEmployer
       
+      // Redirect employers trying to access job seeker routes
       if (isEmployer && !isEmployerRoute && !isPublicRoute) {
         return NextResponse.redirect(new URL("/employer/dashboard", req.url))
       }
@@ -54,8 +59,7 @@ export async function middleware(req: NextRequest) {
       }
       
       // Redirect authenticated users away from login/signup
-      if (isPublicRoute && req.nextUrl.pathname !== "/" && 
-         !req.nextUrl.pathname.startsWith("/auth/")) {
+      if (isPublicRoute && req.nextUrl.pathname !== "/") {
         const redirectUrl = isEmployer ? "/employer/dashboard" : "/dashboard"
         return NextResponse.redirect(new URL(redirectUrl, req.url))
       }
@@ -63,12 +67,16 @@ export async function middleware(req: NextRequest) {
     
     return res
   } catch (error) {
-    console.error("Middleware error:", error)
+    console.error("Auth middleware error:", error)
+    // On error, still allow the request to proceed
     return res
   }
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.svg).*)"],
+  matcher: [
+    // Match all paths except static files and api routes
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg).*)",
+  ],
 }
 
