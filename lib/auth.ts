@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react"
 import type { User } from "@supabase/supabase-js"
-import { getSupabase, AuthStore, AUTH_STORAGE_KEY } from "@/lib/supabaseClient"
+import { getSupabase as getSupabaseClient, AuthStore, AUTH_STORAGE_KEY } from "@/lib/supabaseClient"
+
+// Re-export the getSupabase function to maintain backward compatibility with existing imports
+export const getSupabase = getSupabaseClient
 
 // Hook for authentication
 export function useAuth() {
