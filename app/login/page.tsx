@@ -66,12 +66,12 @@ export default function LoginPage() {
       const isEmployer = result.user?.user_metadata?.isEmployer
       const dashboardPath = isEmployer ? "/employer/dashboard" : "/dashboard"
       
-      // Redirect automatically after short delay
-      setTimeout(() => {
-        window.location.replace(dashboardPath)
-      }, 1000)
+      console.log("User authentication successful, redirecting to", dashboardPath)
       
-      setLoginSuccess(true)
+      // Redirect immediately
+      window.location.replace(dashboardPath)
+      
+      // We don't need to set login success since we're redirecting
     } catch (error: any) {
       console.error("Login error:", error)
       toast({

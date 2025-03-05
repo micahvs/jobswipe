@@ -1,60 +1,8 @@
 "use client"
 
-import { createClient } from "@supabase/supabase-js"
 import { useState, useEffect } from "react"
 import type { User } from "@supabase/supabase-js"
-
-// Create a singleton Supabase client
-let supabaseClient: any = null
-
-// Simple function to get the Supabase client
-export function getSupabase() {
-  if (typeof window === "undefined") {
-    return null // Return null during SSR
-  }
-
-  if (!supabaseClient) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("Missing Supabase environment variables")
-      return null
-    }
-
-    supabaseClient = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: true,
-        storageKey: 'jobswipe-auth',
-      }
-    })
-  }
-
-  return supabaseClient
-}
-
-// Simple local storage fallback
-export const AuthStore = {
-  setUser: (user: any) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("jobswipe-user", JSON.stringify(user))
-    }
-  },
-
-  getUser: () => {
-    if (typeof window !== "undefined") {
-      const user = localStorage.getItem("jobswipe-user")
-      return user ? JSON.parse(user) : null
-    }
-    return null
-  },
-
-  clearUser: () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("jobswipe-user")
-    }
-  }
-}
+import { getSupabase, AuthStore, AUTH_STORAGE_KEY } from "@/lib/supabaseClient"
 
 // Hook for authentication
 export function useAuth() {
@@ -66,14 +14,7 @@ export function useAuth() {
     const getCurrentUser = async () => {
       try {
         const supabase = getSupabase()
-        if (!supabase) {
-          // Try fallback if Supabase client isn't available
-          const fallbackUser = AuthStore.getUser()
-          setUser(fallbackUser)
-          setLoading(false)
-          return
-        }
-
+        
         // Get user from Supabase
         const { data, error } = await supabase.auth.getUser()
 
@@ -100,20 +41,20 @@ export function useAuth() {
 
     // Set up auth state listener
     const supabase = getSupabase()
-    if (supabase) {
-      const { data } = supabase.auth.onAuthStateChange((event: any, session: any) => {
-        if (session?.user) {
-          AuthStore.setUser(session.user)
-          setUser(session.user)
-        } else if (event === 'SIGNED_OUT') {
-          AuthStore.clearUser()
-          setUser(null)
-        }
-      })
-
-      return () => {
-        data?.subscription.unsubscribe()
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        console.log("Auth state change:", event, "User:", session.user.email)
+        AuthStore.setUser(session.user)
+        setUser(session.user)
+      } else if (event === 'SIGNED_OUT') {
+        console.log("Auth state change: SIGNED_OUT")
+        AuthStore.clearUser()
+        setUser(null)
       }
+    })
+
+    return () => {
+      data?.subscription.unsubscribe()
     }
   }, [])
 
@@ -123,17 +64,20 @@ export function useAuth() {
 // Login function that works reliably
 export async function loginUser(email: string, password: string, isEmployer = false) {
   try {
+    console.log(`Attempting login for: ${email}`)
     const supabase = getSupabase()
-    if (!supabase) {
-      throw new Error("Supabase client not available")
-    }
-
+    
+    // Clear any existing sessions first to prevent conflicts
+    localStorage.removeItem(AUTH_STORAGE_KEY)
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     })
 
     if (error) throw error
+
+    console.log("Login successful for:", email)
 
     // Check if user is an employer when that's expected
     if (isEmployer && !data.user.user_metadata?.isEmployer) {
@@ -155,12 +99,13 @@ export async function loginUser(email: string, password: string, isEmployer = fa
 export async function logoutUser() {
   try {
     const supabase = getSupabase()
-    if (supabase) {
-      await supabase.auth.signOut()
-    }
+    await supabase.auth.signOut()
 
     // Clear local storage regardless of Supabase success
     AuthStore.clearUser()
+
+    // For extra measure, remove any auth cookies/storage
+    localStorage.removeItem(AUTH_STORAGE_KEY)
 
     return { success: true }
   } catch (error: any) {

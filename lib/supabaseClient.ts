@@ -4,6 +4,9 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 // Global variable to store the Supabase client instance
 let supabaseInstance: SupabaseClient | null = null
 
+// The key used for auth storage across the app
+export const AUTH_STORAGE_KEY = "jobswipe-auth"
+
 // Function to get the Supabase client (singleton pattern)
 export function getSupabase(): SupabaseClient {
   // For client-side only
@@ -27,7 +30,8 @@ export function getSupabase(): SupabaseClient {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storageKey: "jobswipe-auth",
+        storageKey: AUTH_STORAGE_KEY,
+        flowType: 'pkce',
       },
     })
 
@@ -72,6 +76,22 @@ export const AuthStore = {
   clearUser: () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("jobswipe-user")
+      // Also clear any auth tokens that might be lingering
+      localStorage.removeItem(AUTH_STORAGE_KEY)
     }
   },
+  
+  // Check if user is authenticated (client-side only)
+  isAuthenticated: async () => {
+    if (typeof window === "undefined") return false
+    
+    try {
+      const supabase = getSupabase()
+      const { data, error } = await supabase.auth.getSession()
+      return !!data.session
+    } catch (err) {
+      console.error('Error checking auth status:', err)
+      return false
+    }
+  }
 }
