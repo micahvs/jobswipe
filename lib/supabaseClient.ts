@@ -27,7 +27,7 @@ export function getSupabase(): SupabaseClient {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storageKey: "jobswipe-auth-token",
+        storageKey: "jobswipe-auth",
       },
     })
 
@@ -55,14 +55,14 @@ export const AuthStore = {
   // Store user info in localStorage as a fallback
   setUser: (user: any) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("jobswipe-user-fallback", JSON.stringify(user))
+      localStorage.setItem("jobswipe-user", JSON.stringify(user))
     }
   },
 
   // Get user info from localStorage
   getUser: () => {
     if (typeof window !== "undefined") {
-      const userStr = localStorage.getItem("jobswipe-user-fallback")
+      const userStr = localStorage.getItem("jobswipe-user")
       return userStr ? JSON.parse(userStr) : null
     }
     return null
@@ -71,7 +71,7 @@ export const AuthStore = {
   // Clear user info from localStorage
   clearUser: () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("jobswipe-user-fallback")
+      localStorage.removeItem("jobswipe-user")
     }
   },
 }

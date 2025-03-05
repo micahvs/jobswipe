@@ -22,8 +22,8 @@ export default function LoginPage() {
 
   const handleNavigation = (path: string) => {
     console.log(`Navigating to: ${path}`)
-    // Force a hard navigation
-    window.location.href = path
+    // Use router navigation to prevent state loss
+    window.location.replace(path)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,10 +58,19 @@ export default function LoginPage() {
       
       toast({
         title: "Login successful",
-        description: "You are now logged in. Please use the navigation links below.",
+        description: "Redirecting to dashboard...",
         type: "success",
       })
 
+      // Check if user is employer and redirect accordingly
+      const isEmployer = result.user?.user_metadata?.isEmployer
+      const dashboardPath = isEmployer ? "/employer/dashboard" : "/dashboard"
+      
+      // Redirect automatically after short delay
+      setTimeout(() => {
+        window.location.replace(dashboardPath)
+      }, 1000)
+      
       setLoginSuccess(true)
     } catch (error: any) {
       console.error("Login error:", error)
