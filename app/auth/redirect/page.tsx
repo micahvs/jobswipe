@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getSupabase } from "@/lib/supabaseClient"
 
-export default function RedirectPage() {
+// Content component that will be wrapped in Suspense
+function RedirectContent() {
   const [destination, setDestination] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState(3)
@@ -134,6 +135,34 @@ export default function RedirectPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+// Loading fallback for Suspense
+function LoadingFallback() {
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold">Loading Redirect...</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center py-4">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+            <p className="mt-4">Preparing redirection...</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Main export that wraps the content in Suspense
+export default function RedirectPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <RedirectContent />
+    </Suspense>
   )
 }
 

@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabase } from "@/lib/supabaseClient"
 
-export default function HtmlRedirect() {
+// Suspense wrapper component 
+function AuthRedirectContent() {
   const [status, setStatus] = useState("Authenticating...")
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -102,5 +103,29 @@ export default function HtmlRedirect() {
         )}
       </div>
     </div>
+  )
+}
+
+// Loading fallback for Suspense
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+        <h1 className="text-2xl font-bold mb-4">Loading Authentication...</h1>
+        <div className="flex items-center justify-center mb-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+        </div>
+        <p className="text-gray-600">Please wait...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main export that wraps the content in Suspense
+export default function HtmlRedirect() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AuthRedirectContent />
+    </Suspense>
   )
 }
