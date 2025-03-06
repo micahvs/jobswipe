@@ -85,7 +85,8 @@ export default function JobsPage() {
       toast({
         title: "Job Liked!",
         description: `You liked ${currentJob.title} at ${currentJob.company}`,
-        type: "success"
+        type: "success",
+        duration: 2000 // Short duration for quick dismissal
       })
     }
 
@@ -93,7 +94,8 @@ export default function JobsPage() {
       toast({
         title: "No more jobs",
         description: "You've viewed all available jobs.",
-        type: "info"
+        type: "info",
+        duration: 3000 // Slightly longer for informational messages
       })
     } else {
       setCurrentJobIndex(currentJobIndex + 1)

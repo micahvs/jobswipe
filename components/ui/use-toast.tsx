@@ -17,8 +17,8 @@ type Toast = {
 
 type ToastActionElement = React.ReactElement
 
-const TOAST_LIMIT = 5
-const TOAST_REMOVE_DELAY = 1000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 500
 
 type ToasterToast = ToastProps & {
   id: string
