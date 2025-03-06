@@ -5,10 +5,12 @@ import { DashboardCard } from "@/components/dashboard-card"
 import { Button } from "@/components/ui/button"
 import { UserIcon, BriefcaseIcon, BarChartIcon } from 'lucide-react'
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
 
@@ -74,8 +76,18 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <DashboardCard icon={<UserIcon className="h-6 w-6 text-primary" />} title="Complete Your Profile">
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/profile">Update Profile</Link>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              // Pass auth state in session storage for extra reliability
+              if (user) {
+                sessionStorage.setItem('auth_user_email', user.email || '');
+                sessionStorage.setItem('auth_user_id', user.id || '');
+              }
+              router.push("/profile");
+            }}
+          >
+            Update Profile
           </Button>
         </DashboardCard>
 
@@ -84,8 +96,18 @@ export default function Dashboard() {
           title="Start Job Search"
           description="Find your perfect match"
         >
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/jobs">Browse Jobs</Link>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              // Pass auth state in session storage for extra reliability
+              if (user) {
+                sessionStorage.setItem('auth_user_email', user.email || '');
+                sessionStorage.setItem('auth_user_id', user.id || '');
+              }
+              router.push("/jobs");
+            }}
+          >
+            Browse Jobs
           </Button>
         </DashboardCard>
 
@@ -94,8 +116,18 @@ export default function Dashboard() {
           title="Your Matches"
           description="See who liked your profile"
         >
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/matches">View Matches</Link>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              // Pass auth state in session storage for extra reliability
+              if (user) {
+                sessionStorage.setItem('auth_user_email', user.email || '');
+                sessionStorage.setItem('auth_user_id', user.id || '');
+              }
+              router.push("/matches");
+            }}
+          >
+            View Matches
           </Button>
         </DashboardCard>
       </div>

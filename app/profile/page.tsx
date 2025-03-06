@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 
 interface JobPreferences {
   remote: boolean
@@ -29,6 +31,10 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+  
   const [profile, setProfile] = useState<ProfileData>({
     name: "David Smith",
     title: "Frontend Developer",
@@ -45,6 +51,20 @@ export default function ProfilePage() {
   })
 
   const { toast } = useToast()
+  
+  // Client-side only effect to check auth and prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+    
+    // Get auth data from session storage as a fallback
+    const sessionEmail = sessionStorage.getItem('auth_user_email')
+    const sessionId = sessionStorage.getItem('auth_user_id')
+    
+    if (!user && !sessionEmail && !loading && mounted) {
+      console.log("Profile page - Not authenticated, redirecting to login")
+      router.push('/login')
+    }
+  }, [user, loading, mounted, router])
 
   const handleSkillAdd = () => {
     if (profile.newSkill && !profile.skills.includes(profile.newSkill)) {
@@ -83,9 +103,25 @@ export default function ProfilePage() {
     })
   }
 
+  // Show loading state
+  if (!mounted || loading) {
+    return (
+      <div className="max-w-2xl mx-auto p-4 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="mt-4">Loading profile...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Your Profile</h1>
+      
+      {user && (
+        <div className="bg-green-50 border border-green-200 p-4 rounded-md mb-6">
+          <p className="font-medium text-green-800">Editing profile for {user.email}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <Card className="mb-6">

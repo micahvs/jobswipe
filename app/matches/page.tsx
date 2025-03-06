@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MessageCircleIcon, UserIcon } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 
 interface Match {
   id: number
@@ -50,11 +52,44 @@ const SAMPLE_MATCHES: Match[] = [
 ]
 
 export default function MatchesPage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [matches] = useState<Match[]>(SAMPLE_MATCHES)
+  
+  // Client-side only effect to check auth and prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+    
+    // Get auth data from session storage as a fallback
+    const sessionEmail = sessionStorage.getItem('auth_user_email')
+    const sessionId = sessionStorage.getItem('auth_user_id')
+    
+    if (!user && !sessionEmail && !loading && mounted) {
+      console.log("Matches page - Not authenticated, redirecting to login")
+      router.push('/login')
+    }
+  }, [user, loading, mounted, router])
 
+  // Show loading state
+  if (!mounted || loading) {
+    return (
+      <div className="max-w-3xl mx-auto p-4 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="mt-4">Loading matches...</p>
+      </div>
+    )
+  }
+  
   return (
     <div className="max-w-3xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Your Matches</h1>
+      
+      {user && (
+        <div className="bg-green-50 border border-green-200 p-4 rounded-md mb-6">
+          <p className="font-medium text-green-800 text-sm text-center">Logged in as {user.email}</p>
+        </div>
+      )}
 
       {matches.length === 0 ? (
         <div className="text-center py-12">

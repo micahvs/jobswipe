@@ -38,13 +38,19 @@ export async function middleware(req: NextRequest) {
     // Debugging routes - always allow access
     const isDebugRoute = 
       req.nextUrl.pathname === "/dashboard" || 
-      req.nextUrl.pathname === "/employer/dashboard"
+      req.nextUrl.pathname === "/employer/dashboard" ||
+      req.nextUrl.pathname === "/profile" || 
+      req.nextUrl.pathname === "/jobs" || 
+      req.nextUrl.pathname === "/matches" ||
+      req.nextUrl.pathname === "/employer/post-job" ||
+      req.nextUrl.pathname.startsWith("/chat/")
     
     // Employer specific routes
     const isEmployerRoute = req.nextUrl.pathname.startsWith("/employer/")
     
-    // TEMPORARY: Allow access to dashboard for debugging
+    // TEMPORARY: Allow access to all app routes for debugging
     if (isDebugRoute) {
+      console.log("Middleware: Debug route access allowed:", req.nextUrl.pathname)
       return res
     }
     

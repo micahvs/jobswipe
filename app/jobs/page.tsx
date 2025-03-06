@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckIcon, XIcon } from 'lucide-react'
 import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 
 interface Job {
   id: number
@@ -48,10 +50,27 @@ const SAMPLE_JOBS: Job[] = [
 ]
 
 export default function JobsPage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
   const [swipedJobs, setSwipedJobs] = useState<number[]>([])
   const [likedJobs, setLikedJobs] = useState<number[]>([])
   const { toast } = useToast()
+  
+  // Client-side only effect to check auth and prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+    
+    // Get auth data from session storage as a fallback
+    const sessionEmail = sessionStorage.getItem('auth_user_email')
+    const sessionId = sessionStorage.getItem('auth_user_id')
+    
+    if (!user && !sessionEmail && !loading && mounted) {
+      console.log("Jobs page - Not authenticated, redirecting to login")
+      router.push('/login')
+    }
+  }, [user, loading, mounted, router])
 
   const currentJob = SAMPLE_JOBS[currentJobIndex]
   const isLastJob = currentJobIndex === SAMPLE_JOBS.length - 1
@@ -117,9 +136,25 @@ export default function JobsPage() {
     )
   }
 
+  // Show loading state
+  if (!mounted || loading) {
+    return (
+      <div className="max-w-md mx-auto p-4 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="mt-4">Loading jobs...</p>
+      </div>
+    )
+  }
+  
   return (
     <div className="max-w-md mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">Find Your Match</h1>
+      
+      {user && (
+        <div className="bg-green-50 border border-green-200 p-4 rounded-md mb-6">
+          <p className="font-medium text-green-800 text-sm text-center">Logged in as {user.email}</p>
+        </div>
+      )}
 
       <div className="relative">
         <Card className="p-6 shadow-md">
