@@ -5,10 +5,12 @@ import { DashboardCard } from "@/components/dashboard-card"
 import { Button } from "@/components/ui/button"
 import { UserIcon, BriefcaseIcon, BarChartIcon, UsersIcon } from 'lucide-react'
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
 
 export default function EmployerDashboard() {
   const { user, loading } = useAuth()
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
 
@@ -72,8 +74,19 @@ export default function EmployerDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <DashboardCard icon={<UserIcon className="h-6 w-6 text-primary" />} title="Company Profile">
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/employer/profile">Update Profile</Link>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              // Pass auth state in session storage for extra reliability
+              if (user) {
+                sessionStorage.setItem('auth_user_email', user.email || '');
+                sessionStorage.setItem('auth_user_id', user.id || '');
+                sessionStorage.setItem('auth_user_is_employer', 'true');
+              }
+              router.push("/employer/profile");
+            }}
+          >
+            Update Profile
           </Button>
         </DashboardCard>
 
@@ -82,8 +95,18 @@ export default function EmployerDashboard() {
           title="Post a New Job"
           description="Find the perfect candidate"
         >
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/employer/post-job">Post Job</Link>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              if (user) {
+                sessionStorage.setItem('auth_user_email', user.email || '');
+                sessionStorage.setItem('auth_user_id', user.id || '');
+                sessionStorage.setItem('auth_user_is_employer', 'true');
+              }
+              router.push("/employer/post-job");
+            }}
+          >
+            Post Job
           </Button>
         </DashboardCard>
 
@@ -92,8 +115,18 @@ export default function EmployerDashboard() {
           title="Candidate Matches"
           description="See who matched with your jobs"
         >
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/employer/candidates">View Candidates</Link>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              if (user) {
+                sessionStorage.setItem('auth_user_email', user.email || '');
+                sessionStorage.setItem('auth_user_id', user.id || '');
+                sessionStorage.setItem('auth_user_is_employer', 'true');
+              }
+              router.push("/employer/candidates");
+            }}
+          >
+            View Candidates
           </Button>
         </DashboardCard>
 
@@ -102,8 +135,18 @@ export default function EmployerDashboard() {
           title="Job Analytics"
           description="Track your job performance"
         >
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/employer/analytics">View Analytics</Link>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              if (user) {
+                sessionStorage.setItem('auth_user_email', user.email || '');
+                sessionStorage.setItem('auth_user_id', user.id || '');
+                sessionStorage.setItem('auth_user_is_employer', 'true');
+              }
+              router.push("/employer/analytics");
+            }}
+          >
+            View Analytics
           </Button>
         </DashboardCard>
       </div>

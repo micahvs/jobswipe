@@ -43,6 +43,9 @@ export async function middleware(req: NextRequest) {
       req.nextUrl.pathname === "/jobs" || 
       req.nextUrl.pathname === "/matches" ||
       req.nextUrl.pathname === "/employer/post-job" ||
+      req.nextUrl.pathname === "/employer/profile" ||
+      req.nextUrl.pathname === "/employer/candidates" ||
+      req.nextUrl.pathname === "/employer/analytics" ||
       req.nextUrl.pathname.startsWith("/chat/")
     
     // Employer specific routes
