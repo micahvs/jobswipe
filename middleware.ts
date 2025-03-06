@@ -35,17 +35,29 @@ export async function middleware(req: NextRequest) {
       req.nextUrl.pathname.startsWith("/signup") ||
       req.nextUrl.pathname === "/"
     
+    // Debugging routes - always allow access
+    const isDebugRoute = 
+      req.nextUrl.pathname === "/dashboard" || 
+      req.nextUrl.pathname === "/employer/dashboard"
+    
     // Employer specific routes
     const isEmployerRoute = req.nextUrl.pathname.startsWith("/employer/")
     
+    // TEMPORARY: Allow access to dashboard for debugging
+    if (isDebugRoute) {
+      return res
+    }
+    
     // Handle unauthenticated users
     if (!session && !isPublicRoute) {
+      console.log("Middleware: No session, redirecting to login")
       // Redirect to login
       return NextResponse.redirect(new URL("/login", req.url))
     }
     
     // Handle authenticated users
     if (session) {
+      console.log("Middleware: Session found for", session.user.email)
       const isEmployer = session.user.user_metadata?.isEmployer
       
       // Redirect employers trying to access job seeker routes

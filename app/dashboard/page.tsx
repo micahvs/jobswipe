@@ -28,8 +28,10 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center">Loading...</div>
+    return <div className="p-8 text-center">Loading authentication...</div>
   }
+  
+  console.log("Dashboard - Auth state:", user ? "Authenticated" : "Not authenticated")
 
   if (error) {
     return (

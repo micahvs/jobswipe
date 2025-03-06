@@ -31,7 +31,8 @@ export function getSupabase(): SupabaseClient {
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storageKey: AUTH_STORAGE_KEY,
-        flowType: 'pkce',
+        // Remove PKCE flow for simpler auth flow
+        // flowType: 'pkce',
       },
     })
 

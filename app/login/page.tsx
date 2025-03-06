@@ -68,8 +68,18 @@ export default function LoginPage() {
       
       console.log("User authentication successful, redirecting to", dashboardPath)
       
-      // Redirect immediately
-      window.location.replace(dashboardPath)
+      // Give time for session to be established before redirect
+      toast({
+        title: "Login successful",
+        description: "Redirecting to dashboard...",
+        type: "success",
+      })
+      
+      // Set a short delay to allow the session to be fully established
+      setTimeout(() => {
+        console.log("Redirecting to", dashboardPath)
+        window.location.replace(dashboardPath)
+      }, 1500)
       
       // We don't need to set login success since we're redirecting
     } catch (error: any) {

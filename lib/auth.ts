@@ -70,8 +70,8 @@ export async function loginUser(email: string, password: string, isEmployer = fa
     console.log(`Attempting login for: ${email}`)
     const supabase = getSupabase()
     
-    // Clear any existing sessions first to prevent conflicts
-    localStorage.removeItem(AUTH_STORAGE_KEY)
+    // Don't clear existing storage as it might cause issues
+    // localStorage.removeItem(AUTH_STORAGE_KEY)
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
